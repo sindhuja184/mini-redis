@@ -1,0 +1,4 @@
+com\miniredis\server\ClientHandler.class
+com\miniredis\App.class
+com\miniredis\server\TcpServer.class
+com\miniredis\Config.class
