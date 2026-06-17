@@ -63,7 +63,7 @@ public class CommandHandler {
 
             case "EXPIRE":
                 if(tokens.length != 3) {
-                    return RespWriter.error("Wrong number of arguments for expire");
+                    return RespWriter.error("wrong number of arguments");
                 }
 
                 String key = tokens[1];
@@ -78,14 +78,14 @@ public class CommandHandler {
             
             case "TTL":
                 if(tokens.length != 2) {
-                    return RespWriter.error("Wrong number of arguments for ttl");
+                    return RespWriter.error("wrong number of arguments");
                 }
 
                 return RespWriter.integer(dataStore.ttl(tokens[1]));
 
             case "PERSIST":
                 if(tokens.length != 2) {
-                    return RespWriter.error("Wrong number of arguments for persist");
+                    return RespWriter.error("wrong number of arguments");
                 }
 
                 return RespWriter.integer(dataStore.persist(tokens[1]));

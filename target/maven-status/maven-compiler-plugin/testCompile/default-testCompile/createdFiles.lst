@@ -1,4 +1,6 @@
 com\miniredis\AppTest.class
 com\miniredis\server\TcpServerTest$1.class
+com\miniredis\protocol\RespParserTest.class
+com\miniredis\store\DataStoreTest.class
 com\miniredis\server\TcpServerTest.class
 com\miniredis\command\CommandHandlerTest.class

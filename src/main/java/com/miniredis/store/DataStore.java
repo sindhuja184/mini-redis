@@ -1,5 +1,9 @@
 package com.miniredis.store;
 
+import com.miniredis.Config;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -8,12 +12,23 @@ import java.util.concurrent.TimeUnit;
 
 public class DataStore {
     
-    private final ConcurrentHashMap<String, String> store = new ConcurrentHashMap<>();
-    
     private final ConcurrentHashMap<String, Long> expiries = new ConcurrentHashMap<>();
+
+    private final Map<String, String> store = Collections.synchronizedMap(
+        new LinkedHashMap<String, String>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                if (size() > Config.MAX_KEYS) {
+                    expiries.remove(eldest.getKey());
+                    System.out.println("LRU Evicted: " + eldest.getKey());
+                    return true;
+                }
+                return false;
+            }
+        }
+    );
     
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-
 
     public DataStore() {
         scheduler.scheduleAtFixedRate(
@@ -25,59 +40,71 @@ public class DataStore {
     }
 
     public void set(String key, String value) {
-        store.put(key, value);
-        expiries.remove(key); // Clear TTL on overwrite
+        synchronized (store) {
+            store.put(key, value);
+            expiries.remove(key); // Clear TTL on overwrite
+        }
     }
 
     public int expire(String key, long seconds) {
-        if (isExpired(key)) {
-            deleteInternal(key);
-            return 0;
-        }
-        if(!store.containsKey(key)) {
-            return 0;
-        }
+        synchronized (store) {
+            if (isExpired(key)) {
+                deleteInternal(key);
+                return 0;
+            }
+            if (!store.containsKey(key)) {
+                return 0;
+            }
 
-        long expiryTime = System.currentTimeMillis() + (seconds * 1000L);
-
-        expiries.put(key, expiryTime);
-        
-        return 1;
+            long expiryTime = System.currentTimeMillis() + (seconds * 1000L);
+            expiries.put(key, expiryTime);
+            return 1;
+        }
     }
 
     public void setWithExpiry(String key, String value, long ttlMs) {
-        store.put(key, value);
-        expiries.put(key, System.currentTimeMillis() + ttlMs);
+        synchronized (store) {
+            store.put(key, value);
+            expiries.put(key, System.currentTimeMillis() + ttlMs);
+        }
     }
 
     public String get(String key) {
-        if (isExpired(key)) {
-            deleteInternal(key);
-            return null;
+        synchronized (store) {
+            if (isExpired(key)) {
+                deleteInternal(key);
+                return null;
+            }
+            return store.get(key);
         }
-        return store.get(key);
     }
 
     public long del(String key) {
-        if (isExpired(key)) {
-            deleteInternal(key);
-            return 0;
+        synchronized (store) {
+            if (isExpired(key)) {
+                deleteInternal(key);
+                return 0;
+            }
+            expiries.remove(key);
+            return store.remove(key) != null ? 1 : 0;
         }
-        expiries.remove(key);
-        return store.remove(key) != null ? 1 : 0;
     }
 
     public long exists(String key) {
-        if (isExpired(key)) {
-            deleteInternal(key);
-            return 0;
+        synchronized (store) {
+            if (isExpired(key)) {
+                deleteInternal(key);
+                return 0;
+            }
+            return store.containsKey(key) ? 1 : 0;
         }
-        return store.containsKey(key) ? 1 : 0;
     }
 
     public void clear() {
-        store.clear();
-        expiries.clear();
+        synchronized (store) {
+            store.clear();
+            expiries.clear();
+        }
     }
 
     private boolean isExpired(String key) {
@@ -94,63 +121,70 @@ public class DataStore {
     }
 
     public long ttl(String key) {
-        //-2: Key does not exist
-        //-1: Key exists but with no TTL
-        //>0: Remaining seconds
-        if(isExpired(key)) {
-            deleteInternal(key);
-            return -2;
+        synchronized (store) {
+            if (isExpired(key)) {
+                deleteInternal(key);
+                return -2;
+            }
+
+            if (!store.containsKey(key)) {
+                return -2;
+            }
+
+            Long expiryTime = expiries.get(key);
+
+            if (expiryTime == null) {
+                return -1;
+            }
+
+            long remainingMs = expiryTime - System.currentTimeMillis();
+            long remaining = (remainingMs + 999L) / 1000L;
+
+            return Math.max(remaining, 0);
         }
-
-        if(!store.containsKey(key)) {
-            return -2;
-        }
-
-        Long expiryTime = expiries.get(key);
-
-        if(expiryTime == null) {
-            return -1;
-        }
-
-        long remainingMs = expiryTime - System.currentTimeMillis();
-        long remaining = (remainingMs + 999L) / 1000L;
-
-        return Math.max(remaining, 0);
     }
 
     public int persist(String key) {
-        if (isExpired(key)) {
-            deleteInternal(key);
-            return 0;
-        }
-        if(!store.containsKey(key)) {
-            return 0;
-        }
+        synchronized (store) {
+            if (isExpired(key)) {
+                deleteInternal(key);
+                return 0;
+            }
+            if (!store.containsKey(key)) {
+                return 0;
+            }
 
-        return expiries.remove(key) != null
-        ? 1
-        : 0;
+            return expiries.remove(key) != null ? 1 : 0;
+        }
     }
 
     public void cleanupExpiredKeys() {
-
         long now = System.currentTimeMillis();
 
-        for(Map.Entry<String, Long> entry: expiries.entrySet()) {
-
+        for (Map.Entry<String, Long> entry : expiries.entrySet()) {
             String key = entry.getKey();
             Long expiryTime = entry.getValue();
 
-            if(expiryTime <= now) {
-
-                System.out.println("Expiring key : " + key);
-                store.remove(key);
-                expiries.remove(key);
+            if (expiryTime <= now) {
+                synchronized (store) {
+                    Long currentExpiry = expiries.get(key);
+                    if (currentExpiry != null && currentExpiry.equals(expiryTime) && currentExpiry <= now) {
+                        System.out.println("Expiring key : " + key);
+                        store.remove(key);
+                        expiries.remove(key);
+                    }
+                }
             }
         }
     }
+
+    public int size() {
+        synchronized (store) {
+            return store.size();
+        }
+    }
+
     public void shutdown() {
         scheduler.shutdown();
     }
-
 }

@@ -144,10 +144,10 @@ public class CommandHandlerTest {
 
         // Invalid EXPIRE arguments
         assertTrue(handler.handle(new String[]{"EXPIRE", "ttlkey", "abc"}).contains("value is not an integer or out of range"));
-        assertTrue(handler.handle(new String[]{"EXPIRE"}).contains("Wrong number of arguments"));
-        assertTrue(handler.handle(new String[]{"EXPIRE", "ttlkey"}).contains("Wrong number of arguments"));
-        assertTrue(handler.handle(new String[]{"TTL"}).contains("Wrong number of arguments"));
-        assertTrue(handler.handle(new String[]{"PERSIST"}).contains("Wrong number of arguments"));
+        assertTrue(handler.handle(new String[]{"EXPIRE"}).contains("wrong number of arguments"));
+        assertTrue(handler.handle(new String[]{"EXPIRE", "ttlkey"}).contains("wrong number of arguments"));
+        assertTrue(handler.handle(new String[]{"TTL"}).contains("wrong number of arguments"));
+        assertTrue(handler.handle(new String[]{"PERSIST"}).contains("wrong number of arguments"));
 
         // Check expiration behavior
         assertEquals(":1\r\n", handler.handle(new String[]{"EXPIRE", "ttlkey", "1"}));
