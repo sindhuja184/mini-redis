@@ -12,6 +12,7 @@ public class DataStoreTest {
 
     @Before
     public void setUp() {
+        Config.MAX_KEYS = 5;
         dataStore = new DataStore();
     }
 

@@ -32,12 +32,6 @@ public class ClientHandler implements Runnable {
                     break;
                 }
 
-                System.out.println("Received");
-
-                for (String token : tokens) {
-                    System.out.println(token);
-                }
-
                 String response = commandHandler.handle(tokens);
 
                 outputStream.write(response.getBytes());
@@ -49,10 +43,6 @@ public class ClientHandler implements Runnable {
         } finally {
             try {
                 clientSocket.close();
-                System.out.println(
-                        "Client disconnected: "
-                                + clientSocket.getRemoteSocketAddress()
-                );
             } catch (IOException ignored) {
             }
         }

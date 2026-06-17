@@ -4,7 +4,7 @@ public class Config {
 
     public static final int PORT = 6379;
 
-    public static final int THREAD_POOL_SIZE = 10;
+    public static final int THREAD_POOL_SIZE = 100;
 
-    public static final int MAX_KEYS = 5;
+    public static int MAX_KEYS = 100000;
 }

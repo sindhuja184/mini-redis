@@ -20,7 +20,6 @@ public class DataStore {
             protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
                 if (size() > Config.MAX_KEYS) {
                     expiries.remove(eldest.getKey());
-                    System.out.println("LRU Evicted: " + eldest.getKey());
                     return true;
                 }
                 return false;
@@ -169,7 +168,6 @@ public class DataStore {
                 synchronized (store) {
                     Long currentExpiry = expiries.get(key);
                     if (currentExpiry != null && currentExpiry.equals(expiryTime) && currentExpiry <= now) {
-                        System.out.println("Expiring key : " + key);
                         store.remove(key);
                         expiries.remove(key);
                     }
