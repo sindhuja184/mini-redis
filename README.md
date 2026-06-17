@@ -46,3 +46,6 @@ Once compiled and packaged, you can run the server directly using the Java VM:
 ```bash
 java -cp target/mini-redis-1.0-SNAPSHOT.jar com.miniredis.App
 ```
+
+16-06-2026
+1. 

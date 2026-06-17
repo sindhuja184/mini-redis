@@ -1,6 +1,9 @@
 package com.miniredis.server;
 
 import com.miniredis.Config;
+import com.miniredis.command.CommandHandler;
+import com.miniredis.store.DataStore;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -13,12 +16,17 @@ public class TcpServer {
     private final int port;
 
     private final ExecutorService threadPool;
+    private final CommandHandler commandHandler;
+    private final DataStore dataStore;
 
     public TcpServer(int port) {
         this.port = port;
 
         this.threadPool = Executors.newFixedThreadPool(Config.THREAD_POOL_SIZE);
 
+        this.dataStore = new DataStore();
+
+        this.commandHandler = new CommandHandler(this.dataStore);
     }
 
     public void start() {
@@ -30,7 +38,7 @@ public class TcpServer {
 
                 System.out.println("CLient Connected: " + clientSocket.getRemoteSocketAddress());
 
-                threadPool.submit(new ClientHandler(clientSocket));
+                threadPool.submit(new ClientHandler(clientSocket, commandHandler));
             }
         }
         catch(IOException e) {

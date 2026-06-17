@@ -4,15 +4,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+
 import com.miniredis.protocol.RespParser;
 import com.miniredis.protocol.RespWriter;
+import com.miniredis.command.CommandHandler;
 
 public class ClientHandler implements Runnable {
 
     private final Socket clientSocket;
 
-    public ClientHandler(Socket clientSocket) {
+    private final CommandHandler commandHandler;
+
+    public ClientHandler(Socket clientSocket, CommandHandler commandHandler) {
         this.clientSocket = clientSocket;
+        this.commandHandler = commandHandler;
     }
 
     @Override
@@ -33,13 +38,7 @@ public class ClientHandler implements Runnable {
                     System.out.println(token);
                 }
 
-                String response;
-
-                if ("PING".equalsIgnoreCase(tokens[0])) {
-                    response = "+PONG\r\n";
-                } else {
-                    response = RespWriter.error("unknown command");
-                }
+                String response = commandHandler.handle(tokens);
 
                 outputStream.write(response.getBytes());
                 outputStream.flush();
