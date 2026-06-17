@@ -61,6 +61,35 @@ public class CommandHandler {
                 dataStore.clear();
                 return RespWriter.ok();
 
+            case "EXPIRE":
+                if(tokens.length != 3) {
+                    return RespWriter.error("Wrong number of arguments for expire");
+                }
+
+                String key = tokens[1];
+                long seconds;
+                try {
+                    seconds = Long.parseLong(tokens[2]);
+                } catch (NumberFormatException e) {
+                    return RespWriter.error("value is not an integer or out of range");
+                }
+
+                return RespWriter.integer(dataStore.expire(key, seconds));
+            
+            case "TTL":
+                if(tokens.length != 2) {
+                    return RespWriter.error("Wrong number of arguments for ttl");
+                }
+
+                return RespWriter.integer(dataStore.ttl(tokens[1]));
+
+            case "PERSIST":
+                if(tokens.length != 2) {
+                    return RespWriter.error("Wrong number of arguments for persist");
+                }
+
+                return RespWriter.integer(dataStore.persist(tokens[1]));
+
             default:
                 return RespWriter.error("unknown command");
         }

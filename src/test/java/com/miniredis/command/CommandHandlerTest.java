@@ -116,4 +116,49 @@ public class CommandHandlerTest {
         assertEquals(":0\r\n", handler.handle(new String[]{"EXISTS", "tempkey"}));
         assertEquals("$-1\r\n", handler.handle(new String[]{"GET", "tempkey"}));
     }
+
+    @Test
+    public void testExpireTtlAndPersistCommands() throws InterruptedException {
+        // Test basic setting and TTL check
+        assertEquals("+OK\r\n", handler.handle(new String[]{"SET", "ttlkey", "ttlval"}));
+        assertEquals(":-1\r\n", handler.handle(new String[]{"TTL", "ttlkey"})); // No expiry initially
+
+        // Set expire
+        assertEquals(":1\r\n", handler.handle(new String[]{"EXPIRE", "ttlkey", "2"}));
+        
+        // TTL should be around 2 seconds
+        String ttlResp = handler.handle(new String[]{"TTL", "ttlkey"});
+        assertTrue(ttlResp.equals(":2\r\n") || ttlResp.equals(":1\r\n"));
+
+        // Persist
+        assertEquals(":1\r\n", handler.handle(new String[]{"PERSIST", "ttlkey"}));
+        assertEquals(":-1\r\n", handler.handle(new String[]{"TTL", "ttlkey"}));
+
+        // Persist again (now it has no TTL)
+        assertEquals(":0\r\n", handler.handle(new String[]{"PERSIST", "ttlkey"}));
+
+        // Test non-existent keys
+        assertEquals(":0\r\n", handler.handle(new String[]{"EXPIRE", "nonexistent", "10"}));
+        assertEquals(":-2\r\n", handler.handle(new String[]{"TTL", "nonexistent"}));
+        assertEquals(":0\r\n", handler.handle(new String[]{"PERSIST", "nonexistent"}));
+
+        // Invalid EXPIRE arguments
+        assertTrue(handler.handle(new String[]{"EXPIRE", "ttlkey", "abc"}).contains("value is not an integer or out of range"));
+        assertTrue(handler.handle(new String[]{"EXPIRE"}).contains("Wrong number of arguments"));
+        assertTrue(handler.handle(new String[]{"EXPIRE", "ttlkey"}).contains("Wrong number of arguments"));
+        assertTrue(handler.handle(new String[]{"TTL"}).contains("Wrong number of arguments"));
+        assertTrue(handler.handle(new String[]{"PERSIST"}).contains("Wrong number of arguments"));
+
+        // Check expiration behavior
+        assertEquals(":1\r\n", handler.handle(new String[]{"EXPIRE", "ttlkey", "1"}));
+        Thread.sleep(1100);
+
+        // Key is expired now
+        assertEquals("$-1\r\n", handler.handle(new String[]{"GET", "ttlkey"}));
+        assertEquals(":0\r\n", handler.handle(new String[]{"EXISTS", "ttlkey"}));
+        assertEquals(":-2\r\n", handler.handle(new String[]{"TTL", "ttlkey"}));
+        assertEquals(":0\r\n", handler.handle(new String[]{"PERSIST", "ttlkey"}));
+        assertEquals(":0\r\n", handler.handle(new String[]{"EXPIRE", "ttlkey", "5"}));
+        assertEquals(":0\r\n", handler.handle(new String[]{"DEL", "ttlkey"}));
+    }
 }
