@@ -26,7 +26,31 @@ public class DataStore {
             }
         }
     );
-    
+
+    public Map<String, String> getStoreSnapshot() {
+        synchronized (store) {
+            return new LinkedHashMap<>(store);
+        }
+    }
+
+    public Map<String, Long> getExpirySnapshot() {
+        synchronized (store) {
+            return new ConcurrentHashMap<>(expiries);
+        }
+    }
+
+    public void restore(
+        Map<String, String> storeData,
+        Map<String, Long> expiryData
+    ) {
+        synchronized (store) {
+            store.clear();
+            expiries.clear();
+
+            store.putAll(storeData);
+            expiries.putAll(expiryData);
+        }
+    }
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     public DataStore() {

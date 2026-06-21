@@ -15,6 +15,9 @@ A lightweight, multi-threaded implementation of a Redis-compatible TCP server wr
 - **AOF (Append Only File) Persistence & Recovery**:
   - Logs all state-mutating commands (like `SET`, `DEL`, `EXPIRE`, `PERSIST`, `FLUSHALL`) to `appendonly.aof`.
   - Automatically restores server state on startup by replaying the command history from the AOF log file.
+- **RDB (Redis Database) Snapshot Persistence & Recovery**:
+  - Periodically saves a binary snapshot of the dataset to `dump.rdb` at a scheduled interval.
+  - Automatically restores database state by loading the RDB snapshot on startup.
 
 ---
 
@@ -22,7 +25,7 @@ A lightweight, multi-threaded implementation of a Redis-compatible TCP server wr
 
 The project layout follows a standard Maven Java structure:
 
-*   **[App.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/App.java)**: Main entry point initializing and starting the TCP server, recovering state from the AOF log.
+*   **[App.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/App.java)**: Main entry point initializing and starting the TCP server, loading the RDB snapshot, and replaying the AOF log for recovery.
 *   **[Config.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/Config.java)**: Central configuration properties (port, thread pool size, cache limit).
 *   **[TcpServer.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/server/TcpServer.java)**: Listens for incoming client socket connections and delegates them.
 *   **[ClientHandler.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/server/ClientHandler.java)**: Processes individual client connections, reading and responding to RESP commands sequentially.
@@ -30,6 +33,8 @@ The project layout follows a standard Maven Java structure:
 *   **[CommandHandler.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/command/CommandHandler.java)**: Dispatches and validates incoming commands, writing modifying commands to AOF and interacting with the data store.
 *   **[AofManager.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/manager/AofManager.java)**: Manages sequential writing of mutating commands to the append-only log file.
 *   **[AofRecoveryManager.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/manager/AofRecoveryManager.java)**: Parses the append-only log at startup and replays commands to restore state.
+*   **[RdbManager.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/manager/RdbManager.java)**: Manages saving and loading of binary point-in-time database snapshots (`dump.rdb`).
+*   **[SnapshotData.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/snapshot/SnapshotData.java)**: Serialized wrapper containing the key-value store and active expirations map for snapshots.
 *   **[RespParser.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/protocol/RespParser.java)**: Parse logic to read incoming RESP data arrays from input streams.
 *   **[RespWriter.java](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/src/main/java/com/miniredis/protocol/RespWriter.java)**: Formatting utility to write RESP responses (OK, error, integer, bulkString, array) to client output streams.
 *   **[test-redis.ps1](file:///c:/Users/sindh/OneDrive/Desktop/project/mini-redis/test-redis.ps1)**: A helper PowerShell script to connect to the server and execute commands from the terminal.
