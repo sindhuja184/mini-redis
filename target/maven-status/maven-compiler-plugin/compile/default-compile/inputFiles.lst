@@ -2,7 +2,9 @@ C:\Users\sindh\OneDrive\Desktop\project\mini-redis\src\main\java\com\miniredis\c
 C:\Users\sindh\OneDrive\Desktop\project\mini-redis\src\main\java\com\miniredis\protocol\RespWriter.java
 C:\Users\sindh\OneDrive\Desktop\project\mini-redis\src\main\java\com\miniredis\server\ClientHandler.java
 C:\Users\sindh\OneDrive\Desktop\project\mini-redis\src\main\java\com\miniredis\Config.java
+C:\Users\sindh\OneDrive\Desktop\project\mini-redis\src\main\java\com\miniredis\manager\AofRecoveryManager.java
 C:\Users\sindh\OneDrive\Desktop\project\mini-redis\src\main\java\com\miniredis\store\DataStore.java
+C:\Users\sindh\OneDrive\Desktop\project\mini-redis\src\main\java\com\miniredis\manager\AofManager.java
 C:\Users\sindh\OneDrive\Desktop\project\mini-redis\src\main\java\com\miniredis\protocol\RespParser.java
 C:\Users\sindh\OneDrive\Desktop\project\mini-redis\src\main\java\com\miniredis\App.java
 C:\Users\sindh\OneDrive\Desktop\project\mini-redis\src\main\java\com\miniredis\server\TcpServer.java

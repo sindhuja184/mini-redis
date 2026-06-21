@@ -27,7 +27,19 @@ public class RespParser {
                 throw new IOException("Expected Bulk String");
             }
 
-            tokens[i] = readLine(inputStream);
+            int length = Integer.parseInt(
+                    bulkHeader.substring(1)
+            );
+
+            String value = readLine(inputStream);
+
+            if (value.length() != length) {
+                throw new IOException(
+                    "Bulk string length mismatch"
+                );
+            }
+
+            tokens[i] = value;
         }
 
         return tokens;

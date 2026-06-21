@@ -1,17 +1,46 @@
 package com.miniredis.command;
 
+import java.io.IOException;
+
+import com.miniredis.manager.AofManager;
 import com.miniredis.protocol.RespWriter;
 import com.miniredis.store.DataStore;
 
 public class CommandHandler {
 
     private final DataStore dataStore;
+    private final AofManager aofManager;
 
     public CommandHandler(DataStore dataStore) {
         this.dataStore = dataStore;
+        this.aofManager = null;
     }
 
-    public String handle(String[] tokens) {
+    public CommandHandler(DataStore dataStore, AofManager aofManager) {
+        this.dataStore = dataStore;
+        this.aofManager = aofManager;
+    }
+
+    private void persists(String []tokens, boolean recoveryMode) {
+        if (recoveryMode) {
+            return;
+        }
+        if (aofManager == null) {
+            return;
+        }
+        try {
+            aofManager.append(tokens);
+        }
+        catch (IOException e) {
+            throw new RuntimeException("Failed to persist command to AOF");
+        }
+    }
+
+    //Adding overloaded method
+    public String handle(String []tokens) {
+        return handle(tokens, false);
+    }
+    public String handle(String[] tokens, boolean recoveryMode) {
         if (tokens == null || tokens.length == 0) {
             return RespWriter.error("empty command");
         }
@@ -29,6 +58,7 @@ public class CommandHandler {
                 if (tokens.length != 3) {
                     return RespWriter.error("wrong number of arguments");
                 }
+                persists(tokens, recoveryMode);
                 dataStore.set(tokens[1], tokens[2]);
                 return RespWriter.ok();
 
@@ -42,6 +72,7 @@ public class CommandHandler {
                 if (tokens.length < 2) {
                     return RespWriter.error("wrong number of arguments");
                 }
+                persists(tokens, recoveryMode);
                 long count = 0;
                 for (int i = 1; i < tokens.length; i++) {
                     count += dataStore.del(tokens[i]);
@@ -58,6 +89,7 @@ public class CommandHandler {
                 if (tokens.length != 1) {
                     return RespWriter.error("wrong number of arguments");
                 }
+                persists(tokens, recoveryMode);
                 dataStore.clear();
                 return RespWriter.ok();
 
@@ -73,7 +105,7 @@ public class CommandHandler {
                 } catch (NumberFormatException e) {
                     return RespWriter.error("value is not an integer or out of range");
                 }
-
+                persists(tokens, recoveryMode);
                 return RespWriter.integer(dataStore.expire(key, seconds));
             
             case "TTL":
@@ -87,6 +119,7 @@ public class CommandHandler {
                 if(tokens.length != 2) {
                     return RespWriter.error("wrong number of arguments");
                 }
+                persists(tokens, recoveryMode);
 
                 return RespWriter.integer(dataStore.persist(tokens[1]));
 

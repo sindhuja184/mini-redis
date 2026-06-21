@@ -4,6 +4,8 @@ com\miniredis\store\DataStore.class
 com\miniredis\command\CommandHandler.class
 com\miniredis\server\ClientHandler.class
 com\miniredis\store\DataStore$1.class
+com\miniredis\manager\AofManager.class
+com\miniredis\manager\AofRecoveryManager.class
 com\miniredis\server\TcpServer.class
 com\miniredis\protocol\RespParser.class
 com\miniredis\protocol\RespWriter.class

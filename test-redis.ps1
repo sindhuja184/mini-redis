@@ -11,6 +11,11 @@ try {
     return
 }
 
+# If the command is passed or entered as a single space-separated string, split it into separate arguments
+if ($Command.Length -eq 1 -and $Command[0].Trim().Contains(" ")) {
+    $Command = $Command[0].Trim() -split "\s+"
+}
+
 # Construct the RESP array payload
 $payload = "*$($Command.Length)`r`n"
 foreach ($arg in $Command) {
